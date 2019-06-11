@@ -34,3 +34,11 @@ vignettes/*.pdf
 
 # Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
 rsconnect/
+.Rproj.user
+
+
+# data organize
+00-data-organize.R
+# raw data
+data/raw/
+data/processed/
