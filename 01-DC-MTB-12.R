@@ -191,3 +191,122 @@ plot(y = R2.delta['ILMN_2170814',],
      main = 'R2 | ILMN_2170814, LAMP3')
 
 dev.off()
+#-------------------
+#     Gene ontology
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+if (!requireNamespace("clusterProfiler", quietly = TRUE))
+  BiocManager::install("clusterProfiler")
+
+library("clusterProfiler")
+filter.kegg <- function(kegg.output){
+  idx <- kegg.output@result$pvalue <= 0.05
+  kegg.output@result <- kegg.output@result[idx,]
+  return(kegg.output)
+}
+
+load('./data/results/DC-MTB-12/dc.mtb.12.profile.RData')
+
+responsivity.kegg <- filter.kegg(enrichKEGG(
+  gene = unique(dc.mtb.12.profile$responsivity$Entrez_Gene_ID),
+  organism = 'hsa',keyType = "ncbi-geneid"
+))
+
+response.kegg <- filter.kegg(enrichKEGG(
+  gene = unique(dc.mtb.12.profile$response$Entrez_Gene_ID),
+  organism = 'hsa',keyType = "ncbi-geneid"
+))
+
+# 121 entrez id are common
+intersect(unique(dc.mtb.12.profile$response$Entrez_Gene_ID),
+          unique(dc.mtb.12.profile$responsivity$Entrez_Gene_ID))
+
+R.resV <- plyr::dlply(
+  .data = dc.mtb.12.profile$responsivity,
+  .variables = 'replicate')
+
+R1.resV.kegg <- filter.kegg(enrichKEGG(
+  gene = unique(R.resV$R1$Entrez_Gene_ID),
+  organism = 'hsa',keyType = "ncbi-geneid"
+))
+#----------
+# 16 pathways
+dim(R1.resV.kegg@result)
+
+R2.resV.kegg <- filter.kegg(enrichKEGG(
+  gene = unique(R.resV$R2$Entrez_Gene_ID),
+  organism = 'hsa',keyType = "ncbi-geneid"
+  )
+)
+#----------
+# 40 pathways
+dim(R2.resV.kegg@result)
+#----------
+# 7 KEGG pathways common
+intersect(
+  R1.resV.kegg@result$Description,
+  R2.resV.kegg@result$Description
+)
+
+setdiff(
+  R1.resV.kegg@result$Description,
+  R2.resV.kegg@result$Description
+)
+
+setdiff(
+  R2.resV.kegg@result$Description,
+  R1.resV.kegg@result$Description
+)
+
+R.res <- plyr::dlply(
+  .data = dc.mtb.12.profile$response,
+  .variables = 'replicate')
+
+R1.res.kegg <- filter.kegg(enrichKEGG(
+  gene = unique(R.res$R1$Entrez_Gene_ID),
+  organism = 'hsa',keyType = "ncbi-geneid"
+))
+#----------
+# 72 pathways
+dim(R1.res.kegg@result)
+
+R2.res.kegg <- filter.kegg(clusterProfiler::enrichKEGG(
+  gene = unique(R.res$R2$Entrez_Gene_ID),
+  organism = 'hsa',keyType = "ncbi-geneid"
+))
+#----------
+# 84 pathways
+dim(R2.res.kegg@result)
+#----------
+# 57 KEGG pathways common
+intersect(
+  R1.res.kegg@result$Description,
+  R2.res.kegg@result$Description
+)
+
+
+responsivity.GObp <- enrichGO(
+  gene = unique(dc.mtb.12.profile$responsivity$Entrez_Gene_ID),
+  OrgDb = 'org.Hs.eg.db',
+  ont = 'BP'
+)
+de_symbols <- read.table('clipboard',stringsAsFactors = FALSE)
+
+intersect(
+  unique(dc.mtb.12.profile$responsivity$Symbol),
+  unique(de_symbols$V1)
+)
+
+intersect(
+  unique(dc.mtb.12.profile$response$Symbol),
+  unique(de_symbols$V1)
+)
+
+setdiff(
+  c(
+    unique(dc.mtb.12.profile$responsivity$Symbol),
+    unique(dc.mtb.12.profile$response$Symbol)
+  ),
+  unique(de_symbols$V1)
+)
